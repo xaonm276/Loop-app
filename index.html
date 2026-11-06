@@ -8,6 +8,7 @@
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
 * { box-sizing: border-box; }
 
 body {
@@ -24,6 +25,8 @@ header {
   align-items: center;
   background: #fffefa;
   border-bottom: 1px solid #e5eade;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .logo {
@@ -32,10 +35,11 @@ header {
   color: #58735e;
   letter-spacing: -1px;
 }
+
 .logo span { color: #a4b99b; }
 
 nav a {
-  margin-left: 18px;
+  margin-left: 15px;
   text-decoration: none;
   color: #526d59;
   font-size: 13px;
@@ -89,6 +93,7 @@ input, select {
   border-radius: 10px;
   background: #fafbf8;
   font: inherit;
+  margin-bottom: 5px;
 }
 
 button {
@@ -143,6 +148,13 @@ button:hover { background: #526d59; }
   text-align: center;
   color: #58735e;
   margin-top: 15px;
+  overflow-wrap: anywhere;
+}
+
+.switch {
+  color: #58735e;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 footer {
@@ -165,8 +177,10 @@ footer {
   <div class="logo">LOOP<span>.</span></div>
   <nav>
     <a onclick="showPage('home')">Home</a>
-    <a onclick="showPage('register')">Join</a>
+    <a onclick="showPage('auth')">Join / Login</a>
     <a onclick="showPage('explore')">Explore</a>
+    <a id="profileLink" class="hidden" onclick="showPage('profile')">My Profile</a>
+    <a id="logoutLink" class="hidden" onclick="logout()">Logout</a>
   </nav>
 </header>
 
@@ -177,37 +191,59 @@ footer {
     <h1>Knowledge goes around.</h1>
     <p>Share what you know. Learn something new.<br>
     A skill from you, a skill from someone else.</p>
-    <button onclick="showPage('register')">Join LOOP →</button>
+    <button onclick="showPage('auth')">Join LOOP →</button>
     <button class="secondary" onclick="showPage('explore')">Explore Skills</button>
   </div>
 </section>
 
-<section id="register" class="hidden">
+<section id="auth" class="hidden">
   <div class="panel">
-    <h2>Join the LOOP community</h2>
-    <p>Create your student profile.</p>
 
-    <label>Your name</label>
-    <input id="name" placeholder="Enter your name">
+    <div id="signupFields">
+      <h2>Create Your Account</h2>
+      <p>Join the LOOP community.</p>
 
-    <label>Your class</label>
-    <input id="className" placeholder="Example: 2/3">
+      <label>Your name</label>
+      <input id="name" placeholder="Enter your name">
 
-    <label>Your grade</label>
-    <select id="grade">
-      <option value="">Choose your grade</option>
-      <option>First Secondary</option>
-      <option>Second Secondary</option>
-      <option>Third Secondary</option>
-    </select>
+      <label>Your class</label>
+      <input id="className" placeholder="Example: 2/3">
 
-    <label>Skills I can teach</label>
-    <input id="teach" placeholder="Mathematics, Chemistry, Design">
+      <label>Your grade</label>
+      <select id="grade">
+        <option value="">Choose your grade</option>
+        <option>First Secondary</option>
+        <option>Second Secondary</option>
+        <option>Third Secondary</option>
+      </select>
 
-    <label>Skills I want to learn</label>
-    <input id="learn" placeholder="English, Physics, Programming">
+      <label>Skills I can teach</label>
+      <input id="teach" placeholder="Mathematics, Chemistry, Design">
 
-    <button class="full" onclick="register()">Create Profile</button>
+      <label>Skills I want to learn</label>
+      <input id="learn" placeholder="English, Physics, Programming">
+    </div>
+
+    <div id="loginFields" class="hidden">
+      <h2>Welcome Back!</h2>
+      <p>Login to your LOOP account.</p>
+    </div>
+
+    <label>Email</label>
+    <input id="email" type="email" placeholder="Enter your email">
+
+    <label>Password</label>
+    <input id="password" type="password" placeholder="Enter your password">
+
+    <button id="authButton" class="full" onclick="handleAuth()">
+      Create Account
+    </button>
+
+    <p id="switchText">
+      Already have an account?
+      <span class="switch" onclick="setMode('login')">Login</span>
+    </p>
+
     <p id="message"></p>
   </div>
 </section>
@@ -229,7 +265,7 @@ footer {
     <h2>My Profile</h2>
     <div id="profileInfo"></div>
     <button onclick="showPage('explore')">Explore Skills</button>
-    <button class="secondary" onclick="showPage('home')">Home</button>
+    <button class="secondary" onclick="logout()">Logout</button>
   </div>
 </section>
 
@@ -239,7 +275,16 @@ footer {
   LOOP © 2026 · Share · Learn · Connect
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+const supabaseClient = supabase.createClient(
+  "https://yrysmazroemualqvbpuk.supabase.co",
+  "sb_publishable_dG-mOHa2un0CIL9wgNDLeg_3WQH4hvp"
+);
+
+let currentUser = null;
+let mode = "signup";
 let students = [];
 
 const examples = [
@@ -252,13 +297,160 @@ const examples = [
 ];
 
 function showPage(page) {
-  ["home","register","explore","profile"].forEach(id => {
+  ["home","auth","explore","profile"].forEach(id => {
     document.getElementById(id).classList.add("hidden");
   });
 
   document.getElementById(page).classList.remove("hidden");
 
   if(page === "explore") searchSkills();
+  if(page === "profile") renderProfile();
+}
+
+function setMode(newMode) {
+  mode = newMode;
+
+  document.getElementById("signupFields").classList.toggle(
+    "hidden", mode === "login"
+  );
+
+  document.getElementById("loginFields").classList.toggle(
+    "hidden", mode === "signup"
+  );
+
+  document.getElementById("authButton").textContent =
+    mode === "signup" ? "Create Account" : "Login";
+
+  document.getElementById("switchText").innerHTML =
+    mode === "signup"
+    ? 'Already have an account? <span class="switch" onclick="setMode(\'login\')">Login</span>'
+    : 'New to LOOP? <span class="switch" onclick="setMode(\'signup\')">Create Account</span>';
+
+  document.getElementById("message").textContent = "";
+}
+
+function getProfileKey() {
+  return currentUser ? "loop_profile_" + currentUser.id : "";
+}
+
+function saveProfile(profile) {
+  if(!currentUser) return;
+  localStorage.setItem(getProfileKey(), JSON.stringify(profile));
+}
+
+function getProfile() {
+  if(!currentUser) return null;
+
+  try {
+    return JSON.parse(localStorage.getItem(getProfileKey()));
+  } catch {
+    return null;
+  }
+}
+
+async function handleAuth() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const message = document.getElementById("message");
+  const button = document.getElementById("authButton");
+
+  if(!email || !password) {
+    message.textContent = "Please enter your email and password.";
+    return;
+  }
+
+  if(password.length < 6) {
+    message.textContent = "Password must be at least 6 characters.";
+    return;
+  }
+
+  button.disabled = true;
+  message.textContent = "Please wait...";
+
+  try {
+    if(mode === "signup") {
+      const profile = {
+        name: document.getElementById("name").value.trim(),
+        className: document.getElementById("className").value.trim(),
+        grade: document.getElementById("grade").value,
+        teach: document.getElementById("teach").value
+          .split(",").map(x => x.trim()).filter(Boolean),
+        learn: document.getElementById("learn").value
+          .split(",").map(x => x.trim()).filter(Boolean)
+      };
+
+      if(!profile.name || !profile.className ||
+         !profile.grade || !profile.teach.length ||
+         !profile.learn.length) {
+        message.textContent = "Please complete all profile fields.";
+        return;
+      }
+
+      const {data, error} = await supabaseClient.auth.signUp({
+        email,
+        password
+      });
+
+      if(error) throw error;
+
+      if(data.user) {
+        localStorage.setItem(
+          "loop_profile_" + data.user.id,
+          JSON.stringify(profile)
+        );
+      }
+
+      if(data.session) {
+        currentUser = data.user;
+        updateNavigation();
+        showPage("profile");
+      } else {
+        message.textContent =
+          "Account created! Check your email to confirm your account, then login.";
+      }
+
+    } else {
+      const {data, error} =
+        await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+      if(error) throw error;
+
+      currentUser = data.user;
+      updateNavigation();
+      showPage("profile");
+    }
+
+  } catch(error) {
+    message.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function updateNavigation() {
+  document.getElementById("profileLink").classList.toggle(
+    "hidden", !currentUser
+  );
+
+  document.getElementById("logoutLink").classList.toggle(
+    "hidden", !currentUser
+  );
+}
+
+async function logout() {
+  const {error} = await supabaseClient.auth.signOut();
+
+  if(error) {
+    alert(error.message);
+    return;
+  }
+
+  currentUser = null;
+  updateNavigation();
+  showPage("home");
 }
 
 function makeTags(items) {
@@ -270,34 +462,21 @@ function makeTags(items) {
   });
 }
 
-function register() {
-  const student = {
-    name: document.getElementById("name").value.trim(),
-    className: document.getElementById("className").value.trim(),
-    grade: document.getElementById("grade").value,
-    teach: document.getElementById("teach").value
-      .split(",").map(x => x.trim()).filter(Boolean),
-    learn: document.getElementById("learn").value
-      .split(",").map(x => x.trim()).filter(Boolean)
-  };
-
-  if(!student.name || !student.className ||
-     !student.grade || !student.teach.length ||
-     !student.learn.length) {
-    document.getElementById("message").textContent =
-      "Please complete all fields.";
-    return;
-  }
-
-  students.push(student);
-
+function renderProfile() {
   const info = document.getElementById("profileInfo");
   info.innerHTML = "";
 
+  const profile = getProfile();
+
+  if(!profile) {
+    info.textContent = "Your profile information is not available on this device.";
+    return;
+  }
+
   [
-    ["Name", student.name],
-    ["Class", student.className],
-    ["Grade", student.grade]
+    ["Name", profile.name],
+    ["Class", profile.className],
+    ["Grade", profile.grade]
   ].forEach(([label,value]) => {
     const p = document.createElement("p");
     p.textContent = label + ": " + value;
@@ -307,14 +486,12 @@ function register() {
   const teachTitle = document.createElement("p");
   teachTitle.textContent = "Skills I can teach:";
   info.appendChild(teachTitle);
-  info.append(...makeTags(student.teach));
+  info.append(...makeTags(profile.teach));
 
   const learnTitle = document.createElement("p");
   learnTitle.textContent = "Skills I want to learn:";
   info.appendChild(learnTitle);
-  info.append(...makeTags(student.learn));
-
-  showPage("profile");
+  info.append(...makeTags(profile.learn));
 }
 
 function searchSkills() {
@@ -324,17 +501,19 @@ function searchSkills() {
   const results = document.getElementById("results");
   results.innerHTML = "";
 
-  const allStudents = [...examples, ...students];
+  const profile = getProfile();
+  const allStudents = [...examples];
 
-  const matches = allStudents.filter(s =>
-    s.teach.some(skill => skill.toLowerCase().includes(query)) &&
-    query !== ""
-  );
+  if(profile) allStudents.push(profile);
 
   if(!query) {
     results.textContent = "Search for a skill to get started.";
     return;
   }
+
+  const matches = allStudents.filter(s =>
+    s.teach.some(skill => skill.toLowerCase().includes(query))
+  );
 
   if(matches.length === 0) {
     results.textContent = "No students found. Try another skill!";
@@ -351,39 +530,46 @@ function searchSkills() {
     const skill = document.createElement("p");
     skill.textContent = "Can teach:";
 
-    const skillTags = makeTags(s.teach);
-
     const wants = document.createElement("p");
     wants.textContent = "Wants to learn:";
-
-    const learnTags = makeTags(s.learn);
 
     const grade = document.createElement("span");
     grade.className = "tag";
     grade.textContent = s.grade;
 
-    const button = document.createElement("button");
-    button.textContent = "Request Exchange";
+    const requestButton = document.createElement("button");
+    requestButton.textContent = "Request Exchange";
 
-    button.onclick = () => {
-      alert("Demo request! Please arrange any exchange through your teacher.");
+    requestButton.onclick = () => {
+      alert("Demo request! Requests and chats will be added next.");
     };
 
-    card.append(name, skill, ...skillTags, wants,
-      ...learnTags, grade, button);
+    card.append(
+      name, skill, ...makeTags(s.teach),
+      wants, ...makeTags(s.learn), grade, requestButton
+    );
+
     results.appendChild(card);
   });
 }
 
-showPage("home");
-</script>
+async function checkSession() {
+  const {data, error} = await supabaseClient.auth.getSession();
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const supabaseClient = supabase.createClient(
-  "https://yrysmazroemualqvbpuk.supabase.co",
-  "sb_publishable_dG-mOHa2un0CIL9wgNDLeg_3WQH4hvp"
-);
+  if(error) {
+    console.error(error.message);
+    return;
+  }
+
+  if(data.session) {
+    currentUser = data.session.user;
+    updateNavigation();
+  }
+}
+
+checkSession();
+showPage("home");
+setMode("signup");
 </script>
 
 </body>
