@@ -1,1 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOOP | Share & Learn</title>
 
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #f2f4ee;
+  color: #3f5545;
+  font-family: 'Poppins', sans-serif;
+}
+
+header {
+  padding: 22px 7%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fffefa;
+  border-bottom: 1px solid #e5eade;
+}
+
+.logo {
+  font-size: 30px;
+  font-weight: 700;
+  color: #58735e;
+  letter-spacing: -1px;
+}
+
+.logo span { color: #a4b99b; }
+
+nav a {
+  margin-left: 18px;
+  text-decoration: none;
+  color: #526d59;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.container {
+  max-width: 1050px;
+  margin: auto;
+  padding: 40px 20px;
+}
+
+.hero {
+  text-align: center;
+  padding: 35px 10px;
+}
+
+.hero h1 {
+  font-size: clamp(32px, 6vw, 48px);
+  margin: 0;
+  color: #526d59;
+}
+
+.hero p {
+  color: #849581;
+  line-height: 1.8;
+}
+
+.panel {
+  background: #fffefa;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 8px 30px #526d5910;
+  max-width: 550px;
+  margin: 20px auto;
+}
+
+h2 { color: #526d59; }
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 17px 0 7px;
+}
+
+input, select {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #dce4d8;
+  border-radius: 10px;
+  background: #fafbf8;
+  font: inherit;
+}
+
+button {
+  border: 0;
+  background: #718a73;
+  color: white;
+  padding: 13px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  margin-top: 15px;
+}
+
+button:hover { background: #526d59; }
+
+.full { width: 100%; }
+
+.secondary {
+  background: #e8eee5;
+  color: #526d59;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.card {
+  background: #fffefa;
+  border: 1px solid #e5eade;
+  border-radius: 17px;
+  padding: 20px;
+}
+
+.card h3 { margin-top: 0; }
+
+.tag {
+  display: inline-block;
+  background: #e8eee5;
+  color: #526d59;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  margin: 5px 0;
+}
+
+.hidden { display: none; }
+
+#message {
+  text-align: center;
+  color: #58735e;
+  margin-top: 15px;
+}
+
+footer {
+  text-align: center;
+  padding: 30px;
+  color: #899b88;
+  font-size: 12px;
+}
+
+@media(max-width: 500px) {
+  nav a { margin-left: 8px; font-size: 11px; }
+  header { padding: 18px 15px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">LOOP<span>.</span></div>
+  <nav>
+    <a onclick="showPage('home')">Home</a>
+    <a onclick="showPage('register')">Join</a>
+    <a onclick="showPage('explore')">Explore</a>
+  </nav>
+</header>
+
+<main class="container">
+
+<section id="home">
+  <div class="hero">
+    <h1>Knowledge goes around.</h1>
+    <p>Share what you know. Learn something new.<br>
+    A skill from you, a skill from someone else.</p>
+    <button onclick="showPage('register')">Join LOOP →</button>
+    <button class="secondary" onclick="showPage('explore')">Explore Skills</button>
+  </div>
+</section>
+
+<section id="register" class="hidden">
+  <div class="panel">
+    <h2>Join the LOOP community</h2>
+    <p>Create your student profile.</p>
+
+    <label>Your name</label>
+    <input id="name" placeholder="Enter your name">
+
+    <label>Your class</label>
+    <input id="className" placeholder="Example: 2/3">
+
+    <label>Your grade</label>
+    <select id="grade">
+      <option value="">Choose your grade</option>
+      <option>First Secondary</option>
+      <option>Second Secondary</option>
+      <option>Third Secondary</option>
+    </select>
+
+    <label>A skill I can teach</label>
+    <input id="teach" placeholder="Example: Mathematics">
+
+    <label>A skill I want to learn</label>
+    <input id="learn" placeholder="Example: English">
+
+    <button class="full" onclick="register()">Create Profile</button>
+    <p id="message"></p>
+  </div>
+</section>
+
+<section id="explore" class="hidden">
+  <div class="hero">
+    <h1>Explore Skills</h1>
+    <p>Find someone who can teach you something new.</p>
+  </div>
+
+  <input id="search" placeholder="Search for a skill..."
+  oninput="searchSkills()">
+
+  <div id="results" class="grid"></div>
+</section>
+
+<section id="profile" class="hidden">
+  <div class="panel">
+    <h2>My Profile</h2>
+    <div id="profileInfo"></div>
+    <button onclick="showPage('explore')">Explore Skills</button>
+    <button class="secondary" onclick="showPage('home')">Home</button>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  LOOP © 2026 · Share · Learn · Connect
+</footer>
+
+<script>
+let students = [];
+
+const examples = [
+  {name:"Student A", grade:"Second Secondary",
+   teach:"Mathematics", learn:"English"},
+  {name:"Student B", grade:"First Secondary",
+   teach:"English", learn:"Design"},
+  {name:"Student C", grade:"Second Secondary",
+   teach:"Design", learn:"Mathematics"}
+];
+
+function showPage(page) {
+  ["home","register","explore","profile"].forEach(id => {
+    document.getElementById(id).classList.add("hidden");
+  });
+
+  document.getElementById(page).classList.remove("hidden");
+
+  if(page === "explore") searchSkills();
+}
+
+function register() {
+  const student = {
+    name: document.getElementById("name").value.trim(),
+    className: document.getElementById("className").value.trim(),
+    grade: document.getElementById("grade").value,
+    teach: document.getElementById("teach").value.trim(),
+    learn: document.getElementById("learn").value.trim()
+  };
+
+  if(!student.name || !student.className ||
+     !student.grade || !student.teach || !student.learn) {
+    document.getElementById("message").textContent =
+      "Please complete all fields.";
+    return;
+  }
+
+  students.push(student);
+
+  document.getElementById("profileInfo").innerHTML = "";
+
+  const info = document.getElementById("profileInfo");
+
+  [
+    ["Name", student.name],
+    ["Class", student.className],
+    ["Grade", student.grade],
+    ["Can teach", student.teach],
+    ["Wants to learn", student.learn]
+  ].forEach(([label,value]) => {
+    const p = document.createElement("p");
+    p.textContent = label + ": " + value;
+    info.appendChild(p);
+  });
+
+  showPage("profile");
+}
+
+function searchSkills() {
+  const query = document.getElementById("search").value
+    .trim().toLowerCase();
+
+  const results = document.getElementById("results");
+  results.innerHTML = "";
+
+  const allStudents = [...examples, ...students];
+
+  const matches = allStudents.filter(s =>
+    s.teach.toLowerCase().includes(query) &&
+    query !== ""
+  );
+
+  if(!query) {
+    results.textContent = "Search for a skill to get started.";
+    return;
+  }
+
+  if(matches.length === 0) {
+    results.textContent = "No students found. Try another skill!";
+    return;
+  }
+
+  matches.forEach(s => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const name = document.createElement("h3");
+    name.textContent = s.name;
+
+    const skill = document.createElement("p");
+    skill.textContent = "Can teach: " + s.teach;
+
+    const wants = document.createElement("p");
+    wants.textContent = "Wants to learn: " + s.learn;
+
+    const grade = document.createElement("span");
+    grade.className = "tag";
+    grade.textContent = s.grade;
+
+    const button = document.createElement("button");
+    button.textContent = "Request Exchange";
+
+    button.onclick = () => {
+      alert("Demo request! Please arrange any exchange through your teacher.");
+    };
+
+    card.append(name, skill, wants, grade, button);
+    results.appendChild(card);
+  });
+}
+
+showPage("home");
+</script>
+
+</body>
+</html>
