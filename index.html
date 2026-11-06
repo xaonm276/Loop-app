@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +8,6 @@
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-
 * { box-sizing: border-box; }
 
 body {
@@ -32,7 +32,6 @@ header {
   color: #58735e;
   letter-spacing: -1px;
 }
-
 .logo span { color: #a4b99b; }
 
 nav a {
@@ -105,7 +104,6 @@ button {
 }
 
 button:hover { background: #526d59; }
-
 .full { width: 100%; }
 
 .secondary {
@@ -136,7 +134,7 @@ button:hover { background: #526d59; }
   border-radius: 20px;
   padding: 6px 12px;
   font-size: 12px;
-  margin: 5px 0;
+  margin: 5px 5px 5px 0;
 }
 
 .hidden { display: none; }
@@ -203,11 +201,11 @@ footer {
       <option>Third Secondary</option>
     </select>
 
-    <label>A skill I can teach</label>
-    <input id="teach" placeholder="Example: Mathematics">
+    <label>Skills I can teach</label>
+    <input id="teach" placeholder="Mathematics, Chemistry, Design">
 
-    <label>A skill I want to learn</label>
-    <input id="learn" placeholder="Example: English">
+    <label>Skills I want to learn</label>
+    <input id="learn" placeholder="English, Physics, Programming">
 
     <button class="full" onclick="register()">Create Profile</button>
     <p id="message"></p>
@@ -246,11 +244,11 @@ let students = [];
 
 const examples = [
   {name:"Student A", grade:"Second Secondary",
-   teach:"Mathematics", learn:"English"},
+   teach:["Mathematics"], learn:["English"]},
   {name:"Student B", grade:"First Secondary",
-   teach:"English", learn:"Design"},
+   teach:["English"], learn:["Design"]},
   {name:"Student C", grade:"Second Secondary",
-   teach:"Design", learn:"Mathematics"}
+   teach:["Design"], learn:["Mathematics"]}
 ];
 
 function showPage(page) {
@@ -263,17 +261,29 @@ function showPage(page) {
   if(page === "explore") searchSkills();
 }
 
+function makeTags(items) {
+  return items.map(item => {
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = item;
+    return tag;
+  });
+}
+
 function register() {
   const student = {
     name: document.getElementById("name").value.trim(),
     className: document.getElementById("className").value.trim(),
     grade: document.getElementById("grade").value,
-    teach: document.getElementById("teach").value.trim(),
-    learn: document.getElementById("learn").value.trim()
+    teach: document.getElementById("teach").value
+      .split(",").map(x => x.trim()).filter(Boolean),
+    learn: document.getElementById("learn").value
+      .split(",").map(x => x.trim()).filter(Boolean)
   };
 
   if(!student.name || !student.className ||
-     !student.grade || !student.teach || !student.learn) {
+     !student.grade || !student.teach.length ||
+     !student.learn.length) {
     document.getElementById("message").textContent =
       "Please complete all fields.";
     return;
@@ -281,21 +291,28 @@ function register() {
 
   students.push(student);
 
-  document.getElementById("profileInfo").innerHTML = "";
-
   const info = document.getElementById("profileInfo");
+  info.innerHTML = "";
 
   [
     ["Name", student.name],
     ["Class", student.className],
-    ["Grade", student.grade],
-    ["Can teach", student.teach],
-    ["Wants to learn", student.learn]
+    ["Grade", student.grade]
   ].forEach(([label,value]) => {
     const p = document.createElement("p");
     p.textContent = label + ": " + value;
     info.appendChild(p);
   });
+
+  const teachTitle = document.createElement("p");
+  teachTitle.textContent = "Skills I can teach:";
+  info.appendChild(teachTitle);
+  info.append(...makeTags(student.teach));
+
+  const learnTitle = document.createElement("p");
+  learnTitle.textContent = "Skills I want to learn:";
+  info.appendChild(learnTitle);
+  info.append(...makeTags(student.learn));
 
   showPage("profile");
 }
@@ -310,7 +327,7 @@ function searchSkills() {
   const allStudents = [...examples, ...students];
 
   const matches = allStudents.filter(s =>
-    s.teach.toLowerCase().includes(query) &&
+    s.teach.some(skill => skill.toLowerCase().includes(query)) &&
     query !== ""
   );
 
@@ -332,10 +349,14 @@ function searchSkills() {
     name.textContent = s.name;
 
     const skill = document.createElement("p");
-    skill.textContent = "Can teach: " + s.teach;
+    skill.textContent = "Can teach:";
+
+    const skillTags = makeTags(s.teach);
 
     const wants = document.createElement("p");
-    wants.textContent = "Wants to learn: " + s.learn;
+    wants.textContent = "Wants to learn:";
+
+    const learnTags = makeTags(s.learn);
 
     const grade = document.createElement("span");
     grade.className = "tag";
@@ -348,17 +369,19 @@ function searchSkills() {
       alert("Demo request! Please arrange any exchange through your teacher.");
     };
 
-    card.append(name, skill, wants, grade, button);
+    card.append(name, skill, ...skillTags, wants,
+      ...learnTags, grade, button);
     results.appendChild(card);
   });
 }
 
 showPage("home");
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const supabaseClient = supabase.createClient(
-  "https://yrysmazroemualqvbpuk.supabase.co/rest/v1/",
+  "https://yrysmazroemualqvbpuk.supabase.co",
   "sb_publishable_dG-mOHa2un0CIL9wgNDLeg_3WQH4hvp"
 );
 </script>
